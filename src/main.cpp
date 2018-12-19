@@ -110,6 +110,22 @@ struct CMainSignals {
 } g_signals;
 }
 
+// dynamic collateral change
+int64_t GetMNCollateral(int nHeight)
+{
+    // default collateral before fork
+    int64_t nCollateral = 500000;
+
+    // new collateral since block 181666
+    if (nHeight >= 181666)
+    {
+        // 3M collateral
+        nCollateral = 3000000;
+    }
+
+    return nCollateral;
+}
+
 void RegisterWallet(CWalletInterface* pwalletIn) {
     g_signals.SyncTransaction.connect(boost::bind(&CWalletInterface::SyncTransaction, pwalletIn, _1, _2, _3));
     g_signals.EraseTransaction.connect(boost::bind(&CWalletInterface::EraseFromWallet, pwalletIn, _1));
@@ -2511,6 +2527,7 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) c
     bool fIsInitialDownload = IsInitialBlockDownload();
 
     if(nTime > START_MASTERNODE_PAYMENTS) MasternodePayments = true;
+    if(pindexBest->nHeight > 181660 && pindexBest->nHeight < 181760) MasternodePayments = false; // we have to stop masternode payment checks in transition period
     if (!fIsInitialDownload)
     {
         if(MasternodePayments)
